@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use std::collections::HashSet;
+use std::{collections::HashSet, vec};
 
 const Y_PICK: [[usize; 3]; 3] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
 
@@ -47,15 +47,43 @@ fn main() {
 //  for each x, find triplets (y_i, z_j, z_k) of complementary pairs such that their sum is 15
 
     for (x, yz) in yz_vec.into_iter().enumerate() {
-        println!("X {} YZ pairs {:?}", x, yz);
         for triplet in yz.iter().combinations(3) {
-            let rows = Y_PICK.iter().map(|idx| idx.iter().zip(triplet.to_owned()).map(|(&ix, &yz)| yz[ix])
-                                                                            .collect::<Vec<u8>>())
+            let top_rows = Y_PICK.iter().map(|idx| 
+                                                    idx.iter().zip(triplet.to_owned()).map(|(&ix, &yz)| yz[ix])
+                                                                .collect::<Vec<u8>>())
                                             .filter(|t| t.iter().sum::<u8>() == 15)
                                             .collect::<Vec<Vec<u8>>>();
-            if rows.len() == 0 {continue;}
-            println!("Triplet {:?}", triplet);
-            println!("Rows {:?}", rows);
+            if top_rows.len() == 0 {continue;}
+            let bot_rows = top_rows.iter().map(|candidate| 
+                                                            candidate.iter().rev().map(|yz| 15_u8 - x as u8 - yz).collect::<Vec<u8>>())
+                                                        .collect::<Vec<Vec<u8>>>();
+            let mid_rows = top_rows.iter().zip(bot_rows.to_owned()).map(|(top, bot)|
+                                                                top.iter().zip(bot).map(|(&t, b)| 15_i8 - (t + b) as i8)
+                                                                                    .collect::<Vec<i8>>())
+                                                        .collect::<Vec<Vec<i8>>>();
+            let valid_mid_rows = mid_rows.iter().enumerate()
+                                                    .filter(|test| test.1.iter().all(|x| x >= &0))
+                                                    .collect::<Vec<(usize, &Vec<i8>)>>();
+
+            if valid_mid_rows.len() == 0 {continue;}
+
+//            println!("X {}", x);
+//            println!("Triplet {:?}", triplet);
+//            println!("Top Rows {:?}", top_rows);
+//            println!("Mid Rows {:?}", mid_rows);
+//            println!("Bot Rows {:?}", bot_rows);
+//            println!("Valid Mid Rows {:?}", valid_mid_rows);
+
+            for (i, _v) in valid_mid_rows {
+                let square = vec![top_rows[i].to_owned(), mid_rows[i].iter().map(|&x| x as u8).collect::<Vec<u8>>(), bot_rows[i].to_owned()];
+                if square.iter().flatten().collect::<HashSet<&u8>>().len() < 9 {continue;}
+                println!("     Possible Magic Square {:?}", square);
+
+//  Need to swap y with one of the z's to get more squares that are not reflections or rotations
+// *********************************************************************************************
+
+            }
+            println!();
 
         }
 
